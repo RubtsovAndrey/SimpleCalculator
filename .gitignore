@@ -1,0 +1,40 @@
+# Build results
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+*.dll
+*.exe
+*.pdb
+
+# User-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Visual Studio
+.vs/
+
+# VS Code
+.vscode/
+
+# Rider
+.idea/
+*.sln.iml
+
+# Secrets (не коммитить конфиденциальные данные)
+appsettings.Development.json
+appsettings.Local.json
+*.secrets.json
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# NuGet
+*.nupkg
+packages/
