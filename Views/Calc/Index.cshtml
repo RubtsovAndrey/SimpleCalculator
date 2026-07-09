@@ -1,0 +1,335 @@
+@{
+    Layout = null;
+}
+
+@*
+    ============================================================================
+    RAZOR VIEW: HTML с встроенным C# кодом
+    ============================================================================
+    
+    Razor - это шаблонизатор, который позволяет смешивать HTML и C#
+    Символ @ переключает между HTML и C# режимами
+    
+    Этот файл компилируется в C# класс, который генерирует HTML
+    
+    Layout = null - отключает использование мастер-страницы (_Layout.cshtml)
+    Это позволяет View быть полностью самостоятельным HTML-документом
+*@
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Калькулятор</title>
+    
+    @* 
+        ====================================================================
+        ВСТРОЕННЫЙ CSS
+        ====================================================================
+        
+        В реальном проекте CSS обычно в отдельном файле (wwwroot/css/site.css)
+        Здесь встроен для простоты (один файл = всё в одном месте)
+    *@
+    <style>
+        /* Общие стили */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 500px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        /* Контейнер калькулятора */
+        .calculator {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        
+        /* Заголовок */
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 28px;
+        }
+        
+        /* Группа полей формы */
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        /* Метки полей */
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+            font-size: 14px;
+        }
+        
+        /* Поля ввода и выпадающий список */
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+            box-sizing: border-box;
+        }
+        
+        /* Подсветка при фокусе */
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        /* Кнопка */
+        button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        /* Эффект при наведении */
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        /* Эффект при нажатии */
+        button:active {
+            transform: translateY(0);
+        }
+        
+        /* Блок результата */
+        .result {
+            margin-top: 25px;
+            padding: 20px;
+            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+            border: 2px solid #28a745;
+            border-radius: 10px;
+            color: #155724;
+            text-align: center;
+            font-size: 18px;
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        /* Блок ошибки */
+        .error {
+            margin-top: 25px;
+            padding: 20px;
+            background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+            border: 2px solid #dc3545;
+            border-radius: 10px;
+            color: #721c24;
+            text-align: center;
+            animation: shake 0.5s ease-out;
+        }
+        
+        /* Анимация появления результата */
+        @@keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Анимация тряски при ошибке */
+        @@keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+        
+        /* Информационный блок */
+        .info {
+            text-align: center;
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            color: #666;
+        }
+        
+        .info code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="calculator">
+        <h1>Калькулятор</h1>
+
+        @* 
+            ====================================================================
+            HTML ФОРМА
+            ====================================================================
+            
+            method="post" - форма отправляется POST-запросом
+            action="/calc/calculate" - URL, на который отправляются данные
+            
+            Когда пользователь нажимает кнопку "Вычислить":
+            1. Браузер собирает данные из полей (name="Number1", name="Number2", ...)
+            2. Отправляет POST-запрос на /calc/calculate
+            3. Content-Type: application/x-www-form-urlencoded
+            4. Тело: Number1=10&Number2=5&Operation=%2B
+            5. ASP.NET парсит это в объект CalculationRequest
+        *@
+        <form method="post" action="/calc/calculate">
+            
+            @* Первое число *@
+            <div class="form-group">
+                <label for="number1">Первое число:</label>
+                @* 
+                    type="number" - HTML5 тип для чисел (браузер показывает стрелки +/-)
+                    step="any" - разрешает дробные числа (без этого только целые)
+                    id="number1" - для связи с <label for="number1">
+                    name="Number1" - ВАЖНО! Имя должно совпадать со свойством модели
+                    required - HTML5 валидация (браузер не даст отправить пустое поле)
+                *@
+                <input type="number" 
+                       step="any" 
+                       id="number1" 
+                       name="Number1" 
+                       placeholder="Введите число" 
+                       required>
+            </div>
+
+            @* Операция *@
+            <div class="form-group">
+                <label for="operation">Операция:</label>
+                @* 
+                    <select> - выпадающий список
+                    name="Operation" - совпадает со свойством модели
+                *@
+                <select id="operation" name="Operation">
+                    <option value="+">➕ Сложение</option>
+                    <option value="-">➖ Вычитание</option>
+                    <option value="*">✖️ Умножение</option>
+                    <option value="/">➗ Деление</option>
+                </select>
+            </div>
+
+            @* Второе число *@
+            <div class="form-group">
+                <label for="number2">Второе число:</label>
+                <input type="number" 
+                       step="any" 
+                       id="number2" 
+                       name="Number2" 
+                       placeholder="Введите число" 
+                       required>
+            </div>
+
+            @* Кнопка отправки *@
+            <button type="submit">Вычислить</button>
+        </form>
+
+        @* 
+            ====================================================================
+            УСЛОВНЫЙ РЕНДЕРИНГ: Показать результат, если он есть
+            ====================================================================
+            
+            @ - переключает в C# режим
+            if - обычный C# оператор
+            ViewBag.Result - динамическое свойство, переданное из контроллера
+            
+            Razor компилирует это в:
+            if (ViewBag.Result != null)
+            {
+                Write("<div class='result'>");
+                Write("<strong>Результат:</strong><br>");
+                Write(ViewBag.Expression);
+                Write("</div>");
+            }
+        *@
+        @if (ViewBag.Result != null)
+        {
+            <div class="result">
+                <strong>✅ Результат:</strong><br>
+                @* 
+                    @ViewBag.Expression - вывод значения
+                    Razor автоматически экранирует HTML (защита от XSS)
+                    Если Expression = "<script>alert('hack')</script>"
+                    Выведется как текст, а не выполнится как код
+                *@
+                <span style="font-size: 24px; font-weight: bold;">@ViewBag.Expression</span>
+            </div>
+        }
+
+        @* 
+            ====================================================================
+            УСЛОВНЫЙ РЕНДЕРИНГ: Показать ошибку, если она есть
+            ====================================================================
+        *@
+        @if (ViewBag.Error != null)
+        {
+            <div class="error">
+                <strong>❌ Ошибка:</strong><br>
+                @ViewBag.Error
+            </div>
+        }
+    </div>
+
+    @* 
+        ====================================================================
+        ИНФОРМАЦИОННЫЙ БЛОК
+        ====================================================================
+    *@
+    <div class="info">
+        <p><strong>💡 Также доступно JSON API:</strong></p>
+        <p>
+            <code>POST /calc/api</code><br>
+            Тело запроса: <code>{"Number1": 5, "Number2": 3, "Operation": "+"}</code>
+        </p>
+        <p style="margin-top: 15px; font-size: 12px; color: #999;">
+            Проект создан для изучения ASP.NET Core MVC
+        </p>
+    </div>
+</body>
+</html>
+
+@* 
+    ============================================================================
+    КЛЮЧЕВЫЕ КОНЦЕПЦИИ RAZOR
+    ============================================================================
+    
+    1. Символ @ переключает в C# режим
+       - Вывод переменной
+       - Блок C# кода
+       - Управляющие конструкции (if, for, foreach)
+    
+    2. Комментарии Razor не попадают в HTML
+       HTML комментарии попадают в HTML
+    
+    3. ViewBag - динамический объект для передачи данных из контроллера
+       Альтернатива: model директива для строго типизированных View
+    
+    4. Автоматическое экранирование HTML (XSS защита)
+       Обычный вывод - безопасно (экранируется)
+       Html.Raw - небезопасно (не экранируется)
+    
+    5. Компиляция в C# класс
+       Razor компилирует .cshtml в класс, наследующий RazorPage
+       Метод ExecuteAsync() генерирует HTML
+*@
